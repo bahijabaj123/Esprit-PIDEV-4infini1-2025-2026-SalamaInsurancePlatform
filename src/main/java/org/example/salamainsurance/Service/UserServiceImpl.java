@@ -4,7 +4,10 @@ import org.example.salamainsurance.DTO.UserCreateRequest;
 import org.example.salamainsurance.DTO.UserResponse;
 import org.example.salamainsurance.DTO.UserUpdateRequest;
 import org.example.salamainsurance.Entity.User;
+import org.example.salamainsurance.Exception.DuplicateResourceException;
+import org.example.salamainsurance.Exception.ResourceNotFoundException;
 import org.example.salamainsurance.Repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,20 +18,23 @@ import java.util.stream.Collectors;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     @Transactional
     public UserResponse create(UserCreateRequest req) {
         if (userRepository.existsByEmail(req.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new DuplicateResourceException("Email already exists");
         }
 
         User user = User.builder()
                 .email(req.getEmail())
+                .password(passwordEncoder.encode(req.getPassword()))
                 .fullName(req.getFullName())
                 .role(req.getRole())
                 .enabled(req.isEnabled())
@@ -49,14 +55,14 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapToResponse(user);
     }
 
     @Override
     public UserResponse getByEmail(String email) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         return mapToResponse(user);
     }
 
@@ -64,7 +70,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public UserResponse update(Long id, UserUpdateRequest req) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         if (req.getFullName() != null) {
             user.setFullName(req.getFullName());
@@ -87,7 +93,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void delete(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found");
+            throw new ResourceNotFoundException("User not found");
         }
         userRepository.deleteById(id);
     }
