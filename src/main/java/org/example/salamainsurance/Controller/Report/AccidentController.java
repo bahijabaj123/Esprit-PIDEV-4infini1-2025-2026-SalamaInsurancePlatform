@@ -1,4 +1,4 @@
-package org.example.salamainsurance.Controller.Report;
+/*package org.example.salamainsurance.Controller.Report;
 
 import lombok.RequiredArgsConstructor;
 import org.example.salamainsurance.Entity.Report.Accident;
@@ -47,3 +47,5 @@ public class AccidentController {
     return ResponseEntity.noContent().build();
   }
 }
+
+ */

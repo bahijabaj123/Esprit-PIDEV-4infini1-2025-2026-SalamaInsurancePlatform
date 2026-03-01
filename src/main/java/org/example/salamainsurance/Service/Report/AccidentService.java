@@ -17,3 +17,5 @@ public interface AccidentService {
   Accident updateAccident(Long id, Accident accidentDetails);
 }
 
+
+

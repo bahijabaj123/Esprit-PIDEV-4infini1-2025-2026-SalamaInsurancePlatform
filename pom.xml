@@ -76,6 +76,13 @@
       <version>2.1.0</version>
     </dependency>
 
+    <!-- iText7 - Génération PDF Pro -->
+    <dependency>
+      <groupId>com.itextpdf</groupId>
+      <artifactId>itext7-core</artifactId>
+      <version>7.2.5</version>
+      <type>pom</type>
+    </dependency>
 
   </dependencies>
 
@@ -87,6 +94,17 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
+          <!-- IMPORTANT: limite la compilation aux packages Expert pour pouvoir tester via Postman -->
+          <includes>
+            <include>org/example/salamainsurance/SalamaInsuranceApplication.java</include>
+            <include>org/example/salamainsurance/Config/**</include>
+            <include>org/example/salamainsurance/Entity/Expert/**</include>
+            <include>org/example/salamainsurance/Repository/Expert/**</include>
+            <include>org/example/salamainsurance/Service/Expert/**</include>
+            <include>org/example/salamainsurance/Controller/Expert/**</include>
+            <include>org/example/salamainsurance/Service/Expert/Pdf/**</include>
+          </includes>
+
           <annotationProcessorPaths>
             <path>
               <groupId>org.projectlombok</groupId>

@@ -3,7 +3,9 @@ package org.example.salamainsurance.Entity.Expert;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDate;
+import java.util.List;
 
 @Entity
 @Table(name = "expert")
@@ -22,33 +24,49 @@ public class ExpertHassen {
     @NotBlank(message = "First name is mandatory")
     private String firstName;
 
-    @Column(name = "specialty", length = 100)
-    private String specialty;
+    @Column(name = "address", length = 255)
+    private String address;
+
+    @Column(name = "city", length = 100)
+    private String city;
+
+    @Column(name = "postal_code", length = 10)
+    private String postalCode;
 
     @Column(name = "email", length = 150, nullable = false, unique = true)
     @NotBlank(message = "Email is mandatory")
     @Email(message = "Email should be valid")
     private String email;
 
+    @Column(name = "phone", length = 20)
+    private String phone;
+
+    @Column(name = "fax", length = 20)
+    private String fax;
+
+    @Column(name = "specialty", length = 100)
+    private String specialty;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 10)
     private Status status;
-
-    @Column(name = "phone", length = 20)
-    private String phone;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "intervention_zone", length = 20)
     private InterventionZone interventionZone;
 
     @Column(name = "registration_date")
-    @NotNull(message = "Registration date is mandatory")
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate registrationDate;
 
     @Column(name = "years_of_experience")
     @Min(value = 0, message = "Years of experience must be positive")
     private Integer yearsOfExperience;
+
+    // Relation one expert -> many expert reports
+    @OneToMany(mappedBy = "expert", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
+    private List<ExpertReportHassen> expertReports;
 
     // ===== ENUMS =====
     public enum InterventionZone {
@@ -65,101 +83,68 @@ public class ExpertHassen {
     public ExpertHassen() {
     }
 
-    public ExpertHassen(String lastName, String firstName, String specialty, String email,
-                        Status status, String phone,
-                        InterventionZone interventionZone, LocalDate registrationDate,
-                        Integer yearsOfExperience) {
-
+    public ExpertHassen(String lastName, String firstName, String address, String city,
+                        String postalCode, String email, String phone, String fax,
+                        String specialty, Status status, InterventionZone interventionZone,
+                        LocalDate registrationDate, Integer yearsOfExperience) {
         this.lastName = lastName;
         this.firstName = firstName;
-        this.specialty = specialty;
+        this.address = address;
+        this.city = city;
+        this.postalCode = postalCode;
         this.email = email;
-        this.status = status;
         this.phone = phone;
+        this.fax = fax;
+        this.specialty = specialty;
+        this.status = status;
         this.interventionZone = interventionZone;
         this.registrationDate = registrationDate;
         this.yearsOfExperience = yearsOfExperience;
     }
 
     // ===== GETTERS & SETTERS =====
+    public Integer getIdExpert() { return idExpert; }
+    public void setIdExpert(Integer idExpert) { this.idExpert = idExpert; }
 
-    public Integer getIdExpert() {
-        return idExpert;
-    }
+    public String getLastName() { return lastName; }
+    public void setLastName(String lastName) { this.lastName = lastName; }
 
-    public void setIdExpert(Integer idExpert) {
-        this.idExpert = idExpert;
-    }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(String firstName) { this.firstName = firstName; }
 
-    public String getLastName() {
-        return lastName;
-    }
+    public String getAddress() { return address; }
+    public void setAddress(String address) { this.address = address; }
 
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
-    }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
 
-    public String getFirstName() {
-        return firstName;
-    }
+    public String getPostalCode() { return postalCode; }
+    public void setPostalCode(String postalCode) { this.postalCode = postalCode; }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
+    public String getEmail() { return email; }
+    public void setEmail(String email) { this.email = email; }
 
-    public String getSpecialty() {
-        return specialty;
-    }
+    public String getPhone() { return phone; }
+    public void setPhone(String phone) { this.phone = phone; }
 
-    public void setSpecialty(String specialty) {
-        this.specialty = specialty;
-    }
+    public String getFax() { return fax; }
+    public void setFax(String fax) { this.fax = fax; }
 
-    public String getEmail() {
-        return email;
-    }
+    public String getSpecialty() { return specialty; }
+    public void setSpecialty(String specialty) { this.specialty = specialty; }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+    public Status getStatus() { return status; }
+    public void setStatus(Status status) { this.status = status; }
 
-    public Status getStatus() {
-        return status;
-    }
+    public InterventionZone getInterventionZone() { return interventionZone; }
+    public void setInterventionZone(InterventionZone interventionZone) { this.interventionZone = interventionZone; }
 
-    public void setStatus(Status status) {
-        this.status = status;
-    }
+    public LocalDate getRegistrationDate() { return registrationDate; }
+    public void setRegistrationDate(LocalDate registrationDate) { this.registrationDate = registrationDate; }
 
-    public String getPhone() {
-        return phone;
-    }
+    public Integer getYearsOfExperience() { return yearsOfExperience; }
+    public void setYearsOfExperience(Integer yearsOfExperience) { this.yearsOfExperience = yearsOfExperience; }
 
-    public void setPhone(String phone) {
-        this.phone = phone;
-    }
-
-    public InterventionZone getInterventionZone() {
-        return interventionZone;
-    }
-
-    public void setInterventionZone(InterventionZone interventionZone) {
-        this.interventionZone = interventionZone;
-    }
-
-    public LocalDate getRegistrationDate() {
-        return registrationDate;
-    }
-
-    public void setRegistrationDate(LocalDate registrationDate) {
-        this.registrationDate = registrationDate;
-    }
-
-    public Integer getYearsOfExperience() {
-        return yearsOfExperience;
-    }
-
-    public void setYearsOfExperience(Integer yearsOfExperience) {
-        this.yearsOfExperience = yearsOfExperience;
-    }
+    public List<ExpertReportHassen> getExpertReports() { return expertReports; }
+    public void setExpertReports(List<ExpertReportHassen> expertReports) { this.expertReports = expertReports; }
 }

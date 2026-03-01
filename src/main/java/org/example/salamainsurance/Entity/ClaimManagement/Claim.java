@@ -142,14 +142,14 @@ public class Claim {
     actionHistory.add(LocalDateTime.now() + " - " + action);
   }
 
-  /* Helper method to get driver's region from accident
+
   public String getDriverRegion() {
     if (accident != null && accident.getDrivers() != null) {
       // Assuming first driver's region is used
       return accident.getDrivers().getRegion();
     }
     return null;
-  }*/
+  }
 
   // Getters and Setters
   public Long getId() { return id; }

@@ -11,3 +11,5 @@ public enum ClaimStatus {
   CANCELLED,       // Annulé
   CLOSED
 }
+
+
