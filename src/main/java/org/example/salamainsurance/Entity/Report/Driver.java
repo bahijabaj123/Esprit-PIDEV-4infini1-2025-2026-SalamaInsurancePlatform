@@ -3,6 +3,8 @@ package org.example.salamainsurance.Entity.Report;
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "drivers")
 public class Driver {
@@ -31,7 +33,24 @@ public class Driver {
   @JsonBackReference
   private Accident accident;
 
-  // --- Getters & Setters ---
+  @ElementCollection(targetClass = Circumstances.class)
+  @CollectionTable(
+    name = "driver_circumstances",
+    joinColumns = @JoinColumn(name = "driver_id")
+  )
+  @Enumerated(EnumType.STRING)
+  @Column(name = "circumstance")
+  private List<Circumstances> circumstances;
+
+  public List<Circumstances> getCircumstances() {
+    return circumstances;
+  }
+
+  public void setCircumstances(List<Circumstances> circumstances) {
+    this.circumstances = circumstances;
+  }
+
+// --- Getters & Setters ---
 
   public Long getId() {
     return id;
