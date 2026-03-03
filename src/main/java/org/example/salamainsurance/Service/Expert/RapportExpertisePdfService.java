@@ -54,6 +54,7 @@ public class RapportExpertisePdfService {
         this.photoRepository = photoRepository;
     }
 
+
     @Transactional
     public byte[] genererPdfRapport(Integer rapportId) {
         ExpertReportHassen rapport = reportRepository.findById(rapportId)

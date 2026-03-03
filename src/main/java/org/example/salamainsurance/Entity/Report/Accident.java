@@ -67,7 +67,7 @@ public class Accident {
   private AccidentStatus status;
 
 
-  // ✅ zones endommagées (1 à 8)
+  // zones endommagées (1 à 8)
   @ElementCollection
   @CollectionTable(name = "accident_damaged_zones",
     joinColumns = @JoinColumn(name = "accident_id"))
