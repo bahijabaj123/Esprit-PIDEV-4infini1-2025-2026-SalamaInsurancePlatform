@@ -1,4 +1,4 @@
-package org.example.salamainsurance.Entity.Notification;
+package org.example.salamainsurance.Entity.notification;
 
 public enum NotificationStatus {
   PENDING,    // En attente d'envoi

@@ -17,3 +17,5 @@ public interface IndemnityRepository extends JpaRepository<IndemnitySarra,Long> 
 }
 
 
+
+

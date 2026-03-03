@@ -2,8 +2,8 @@ package org.example.salamainsurance.DTO;
 
 import lombok.Builder;
 import lombok.Data;
-import org.example.salamainsurance.Entity.Notification.NotificationType;
-import org.example.salamainsurance.Entity.Notification.UrgencyLevel;
+import org.example.salamainsurance.Entity.notification.NotificationType;
+import org.example.salamainsurance.Entity.notification.UrgencyLevel;
 
 import java.util.Map;
 

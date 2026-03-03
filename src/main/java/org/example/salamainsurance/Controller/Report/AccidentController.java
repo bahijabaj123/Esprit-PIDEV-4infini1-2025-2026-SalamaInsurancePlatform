@@ -47,3 +47,5 @@ public class AccidentController {
     return ResponseEntity.noContent().build();
   }
 }
+
+

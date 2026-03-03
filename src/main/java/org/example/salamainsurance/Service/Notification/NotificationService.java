@@ -1,8 +1,7 @@
 package org.example.salamainsurance.Service.Notification;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.salamainsurance.Entity.Notification.*;
-import org.example.salamainsurance.Entity.Report.Driver;
+import org.example.salamainsurance.Entity.notification.*;
 import org.example.salamainsurance.Repository.NotificationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -86,7 +85,7 @@ public class NotificationService {
       .recipientName(expert.getFirstName() + " " + expert.getLastName())
       .channel(NotificationChannel.EMAIL)
       .type(NotificationType.INFO_REQUEST)
-      .subject("Notification Salama Insurance")
+      .subject("notification Salama Insurance")
       .content(message)
       .urgency(UrgencyLevel.NORMAL)
       .build();
@@ -103,7 +102,7 @@ public class NotificationService {
       .recipientName(insurer.getFirstName() + " " + insurer.getLastName())
       .channel(NotificationChannel.EMAIL)
       .type(NotificationType.SYSTEM_ALERT)
-      .subject("Notification Salama Insurance - Assureur")
+      .subject("notification Salama Insurance - Assureur")
       .content(message)
       .urgency(UrgencyLevel.NORMAL)
       .build();

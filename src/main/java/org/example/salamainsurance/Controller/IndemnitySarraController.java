@@ -9,11 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-@CrossOrigin(origins = "*")
+
 @RestController
 @RequestMapping("/api/indemnities")
 public class IndemnitySarraController {
-/*
+
     @Autowired
     private IndemnityRepository indemnityRepository;
 
@@ -21,14 +21,15 @@ public class IndemnitySarraController {
     @Autowired
     private IndemnitySarraService indemnitySarraService;
 
-    @PostMapping("/validate-payout/{id}")
-    public ResponseEntity<IndemnitySarra> validate(
-            @PathVariable Long id,
-            @RequestParam Double marketValue,
-            @RequestParam Double insuredValue) {
+    @PostMapping("/calculate")
+    public ResponseEntity<IndemnitySarra> calculate(@RequestParam Double gross,
+                                                    @RequestParam Integer resp,
+                                                    @RequestParam Double fixedDed) {
 
-        return ResponseEntity.ok(indemnitySarraService.calculateAdvancedPayout(id, marketValue, insuredValue));
+        IndemnitySarra result = indemnitySarraService.calculateAndSave(gross, resp, fixedDed);
+        return ResponseEntity.ok(result);
     }
+
     @GetMapping
     public List<IndemnitySarra> getAllIndemnities() {
 
@@ -41,11 +42,7 @@ public class IndemnitySarraController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-    @PostMapping("/tester-facture")
-    public String testerFacture(@RequestBody String text) {
-        // 5000 = Dommage, 400 = Franchise
-        return indemnitySarraService.genererFactureSeule(text, 5000.0, 400.0);
-    }
+
     @PatchMapping("/{id}/status")
     public ResponseEntity<IndemnitySarra> updateStatus(@PathVariable Long id, @RequestParam SettlementStatus status) {
         return indemnityRepository.findById(id).map(indemnity -> {
@@ -58,11 +55,5 @@ public class IndemnitySarraController {
     public ResponseEntity<Void> deleteIndemnity(@PathVariable Long id) {
         indemnitySarraService.delete(id);
         return ResponseEntity.noContent().build();
-<<<<<<< HEAD
-    }*/
-}
-=======
     }
-
 }
->>>>>>> feature-complaint-sarra

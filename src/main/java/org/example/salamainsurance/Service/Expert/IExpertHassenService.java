@@ -3,6 +3,7 @@ package org.example.salamainsurance.Service.Expert;
 import org.example.salamainsurance.Entity.Expert.ExpertHassen;
 
 import java.util.List;
+import java.util.Map;
 
 public interface IExpertHassenService {
 
@@ -15,4 +16,25 @@ public interface IExpertHassenService {
     ExpertHassen updateExpert(Integer id, ExpertHassen expert);
 
     void deleteExpert(Integer id);
+
+    List<ExpertHassen> findByInterventionZone(ExpertHassen.InterventionZone zone);
+
+    List<ExpertHassen> findByStatus(ExpertHassen.Status status);
+
+    // ===== MÉTHODES AVANCÉES =====
+
+    // Recherche par spécialité
+    List<ExpertHassen> findBySpecialty(String specialty);
+
+    // Recherche par nom ou prénom
+    List<ExpertHassen> searchByName(String nom);
+
+    // Experts avec X années min d'expérience
+    List<ExpertHassen> findByExperienceMin(Integer minYears);
+
+    // Activer / Désactiver un expert
+    ExpertHassen changeStatus(Integer id, ExpertHassen.Status nouveauStatut);
+
+    // Statistiques globales des experts
+    Map<String, Object> getExpertStatistics();
 }

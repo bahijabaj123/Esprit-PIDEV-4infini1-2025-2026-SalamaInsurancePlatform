@@ -102,4 +102,9 @@ public class IndemnitySarraService implements IIndemnitySarraService {
     public void delete(Long id) {
         indemnityRepository.deleteById(id);
     }
+
+  public IndemnitySarra calculateAndSave(Double gross, Integer resp, Double fixedDed) {
+    return null;
+  }
 }
+

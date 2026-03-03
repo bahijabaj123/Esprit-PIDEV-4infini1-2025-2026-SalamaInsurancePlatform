@@ -1,7 +1,7 @@
 package org.example.salamainsurance.Service.Notification;
 
 import lombok.extern.slf4j.Slf4j;
-import org.example.salamainsurance.Entity.Notification.NotificationEvent;
+import org.example.salamainsurance.Entity.notification.NotificationEvent;
 import org.springframework.stereotype.Service;
 
 @Service

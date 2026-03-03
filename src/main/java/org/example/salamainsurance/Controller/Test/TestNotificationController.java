@@ -105,7 +105,7 @@ public class TestNotificationController {
 
       notificationService.sendToExpert(expert, message);
 
-      return "✅ Notification envoyée à " + expert.getEmail();
+      return "✅ notification envoyée à " + expert.getEmail();
 
     } catch (Exception e) {
       return "❌ Erreur: " + e.getMessage();

@@ -94,6 +94,5 @@ public class ComplaintSarra {
   }
 
   private String sentiment;
-    private String sentiment; // Ajoutez cette ligne
 
 }

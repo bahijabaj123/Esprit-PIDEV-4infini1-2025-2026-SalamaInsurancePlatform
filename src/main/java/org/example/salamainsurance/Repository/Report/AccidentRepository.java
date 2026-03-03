@@ -8,3 +8,5 @@ import java.util.List;
 public interface AccidentRepository extends JpaRepository<Accident, Long> {
  // List<Accident> findAccidentsWithoutClaim();
 }
+
+

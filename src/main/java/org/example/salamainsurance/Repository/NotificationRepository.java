@@ -1,6 +1,6 @@
 package org.example.salamainsurance.Repository;
 
-import org.example.salamainsurance.Entity.Notification.Notification;
+import org.example.salamainsurance.Entity.notification.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
