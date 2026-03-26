@@ -9,9 +9,11 @@ import java.time.LocalDate;
 @Table(name = "indemnities")
 @Data
 public class IndemnitySarra {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long idIndemnity;
+  @Id
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  @Column(name = "id_indemnity")
+  private Long idIndemnity;
+
     private Double grossAmount;
     private Integer responsibility;
     private Double deductibleValue;
@@ -30,4 +32,12 @@ private LocalDate calculationDate;
     public void setResponsibility(Integer responsibility) { this.responsibility = responsibility; }
     public void setDeductibleValue(Double deductibleValue) { this.deductibleValue = deductibleValue; }
     public void setNetAmount(Double netAmount) { this.netAmount = netAmount; }
+
+
+  public Long getId() {
+    return idIndemnity;
+  }
 }
+
+
+

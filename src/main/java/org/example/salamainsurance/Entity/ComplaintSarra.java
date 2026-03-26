@@ -21,8 +21,10 @@ public class ComplaintSarra {
     @Enumerated(EnumType.STRING)
     private ComplaintStatus status;
 
-    @ManyToOne
-    private IndemnitySarra indemnity;
+  @ManyToOne
+  @JoinColumn(name = "indemnity_id", referencedColumnName = "id_indemnity")
+  private IndemnitySarra indemnity;
+
 
     public ComplaintSarra() {
         this.createdAt = LocalDateTime.now();
