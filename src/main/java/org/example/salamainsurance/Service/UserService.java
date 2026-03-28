@@ -19,7 +19,13 @@ public interface UserService {
 
     UserResponse getByEmail(String email);
 
-    UserResponse update(Long id, UserUpdateRequest req);
+    UserResponse update(Long id, UserUpdateRequest req, boolean isAdmin);
 
     void delete(Long id);
+
+    List<UserResponse> listPendingRoleRequests();
+
+    UserResponse approveRoleRequest(Long userId);
+
+    UserResponse rejectRoleRequest(Long userId);
 }

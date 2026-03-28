@@ -1,5 +1,6 @@
 package org.example.salamainsurance.DTO;
 
+import org.example.salamainsurance.Entity.ApprovalStatus;
 import org.example.salamainsurance.Entity.RoleName;
 
 import java.time.LocalDateTime;
@@ -10,6 +11,8 @@ public class UserResponse {
     private String email;
     private String fullName;
     private RoleName role;
+    private RoleName requestedRole;
+    private ApprovalStatus approvalStatus;
     private boolean enabled;
     private boolean locked;
     private LocalDateTime createdAt;
@@ -47,6 +50,22 @@ public class UserResponse {
 
     public void setRole(RoleName role) {
         this.role = role;
+    }
+
+    public RoleName getRequestedRole() {
+        return requestedRole;
+    }
+
+    public void setRequestedRole(RoleName requestedRole) {
+        this.requestedRole = requestedRole;
+    }
+
+    public ApprovalStatus getApprovalStatus() {
+        return approvalStatus;
+    }
+
+    public void setApprovalStatus(ApprovalStatus approvalStatus) {
+        this.approvalStatus = approvalStatus;
     }
 
     public boolean isEnabled() {

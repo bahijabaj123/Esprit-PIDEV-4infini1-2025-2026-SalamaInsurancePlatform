@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -71,7 +72,10 @@ public class UserController {
     public ResponseEntity<UserResponse> update(@PathVariable Long id,
                                                @RequestBody UserUpdateRequest request,
                                                Authentication authentication) {
-        UserResponse response = userService.update(id, request);
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch("ROLE_ADMIN"::equals);
+        UserResponse response = userService.update(id, request, isAdmin);
         return ResponseEntity.ok(response);
     }
 

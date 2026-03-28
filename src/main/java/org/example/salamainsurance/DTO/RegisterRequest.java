@@ -2,7 +2,9 @@ package org.example.salamainsurance.DTO;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import org.example.salamainsurance.Entity.RoleName;
 
 public class RegisterRequest {
 
@@ -16,6 +18,10 @@ public class RegisterRequest {
 
     @NotBlank
     private String fullName;
+
+    /** CLIENT, ASSUREUR, or EXPERT only; ADMIN is rejected in the service layer. */
+    @NotNull
+    private RoleName role;
 
     public String getEmail() {
         return email;
@@ -39,5 +45,13 @@ public class RegisterRequest {
 
     public void setFullName(String fullName) {
         this.fullName = fullName;
+    }
+
+    public RoleName getRole() {
+        return role;
+    }
+
+    public void setRole(RoleName role) {
+        this.role = role;
     }
 }

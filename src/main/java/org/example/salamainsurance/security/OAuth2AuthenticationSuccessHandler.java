@@ -5,6 +5,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.example.salamainsurance.DTO.AuthResponse;
 import org.example.salamainsurance.DTO.UserResponse;
+import org.example.salamainsurance.Entity.ApprovalStatus;
 import org.example.salamainsurance.Entity.RoleName;
 import org.example.salamainsurance.Entity.User;
 import org.example.salamainsurance.Repository.UserRepository;
@@ -45,6 +46,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                             .email(email)
                             .fullName(name != null ? name : email)
                             .role(RoleName.CLIENT)
+                            .requestedRole(null)
+                            .approvalStatus(ApprovalStatus.APPROVED)
                             .enabled(true)
                             .locked(false)
                             .build();
@@ -58,6 +61,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         userResponse.setEmail(user.getEmail());
         userResponse.setFullName(user.getFullName());
         userResponse.setRole(user.getRole());
+        userResponse.setRequestedRole(user.getRequestedRole());
+        userResponse.setApprovalStatus(user.getApprovalStatus());
         userResponse.setEnabled(user.isEnabled());
         userResponse.setLocked(user.isLocked());
         userResponse.setCreatedAt(user.getCreatedAt());

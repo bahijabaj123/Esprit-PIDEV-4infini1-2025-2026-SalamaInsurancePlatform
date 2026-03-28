@@ -2,6 +2,7 @@ package org.example.salamainsurance.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
@@ -30,6 +31,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private RoleName role;
+
+    /** Requested professional role (ASSUREUR/EXPERT) while pending admin approval; null if not applicable. */
+    @Enumerated(EnumType.STRING)
+    private RoleName requestedRole;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @ColumnDefault("'APPROVED'")
+    @Builder.Default
+    private ApprovalStatus approvalStatus = ApprovalStatus.APPROVED;
 
     @Column(nullable = false)
     @Builder.Default

@@ -26,6 +26,9 @@ public class EmailService {
     @Value("${app.base-url}")
     private String baseUrl;
 
+    @Value("${password.reset.base-url}")
+    private String passwordResetBaseUrl;
+
     public EmailService(JavaMailSender mailSender) {
         this.mailSender = mailSender;
     }
@@ -49,6 +52,34 @@ public class EmailService {
                   <p style="color:#aaa;font-size:11px">Salama Insurance Platform</p>
                 </div>
                 """.formatted(fullName, verifyLink, verifyLink);
+
+        sendHtmlEmail(toEmail, subject, html);
+    }
+
+    @Async
+    public void sendPasswordResetEmail(String toEmail, String fullName, String token) {
+        String resetLink = passwordResetBaseUrl + "?token=" + token;
+
+        String subject = "Reset your Salama Insurance password";
+        String html = """
+                <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+                  <h2 style="color:#2c3e50">Hi %s,</h2>
+                  <p>We received a request to reset your password. Click the button below to continue:</p>
+                  <a href="%s"
+                     style="display:inline-block;padding:12px 24px;background:#2ecc71;color:#fff;
+                            text-decoration:none;border-radius:4px;margin:16px 0">
+                     Reset Password
+                  </a>
+                  <p style="color:#999;font-size:12px">
+                    If the button doesn't work, copy this link:<br>%s
+                  </p>
+                  <p style="color:#999;font-size:12px">
+                    This link will expire soon. If you didn't request a password reset, you can safely ignore this email.
+                  </p>
+                  <hr style="border:none;border-top:1px solid #eee">
+                  <p style="color:#aaa;font-size:11px">Salama Insurance Platform</p>
+                </div>
+                """.formatted(fullName, resetLink, resetLink);
 
         sendHtmlEmail(toEmail, subject, html);
     }
