@@ -1,9 +1,11 @@
 package org.example.salamainsurance.Controller;
 
 import jakarta.validation.Valid;
+import org.example.salamainsurance.DTO.DeviceResponse;
 import org.example.salamainsurance.DTO.UserCreateRequest;
 import org.example.salamainsurance.DTO.UserResponse;
 import org.example.salamainsurance.DTO.UserUpdateRequest;
+import org.example.salamainsurance.Service.DeviceService;
 import org.example.salamainsurance.Service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,9 +21,11 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
+    private final DeviceService deviceService;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, DeviceService deviceService) {
         this.userService = userService;
+        this.deviceService = deviceService;
     }
 
     // ✅ GET /api/users/me : profil du user connecté
@@ -31,6 +35,13 @@ public class UserController {
         String email = authentication.getName(); // email depuis le JWT (subject)
         UserResponse response = userService.getByEmail(email);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me/devices")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<DeviceResponse>> getMyDevices(Authentication authentication) {
+        String email = authentication.getName();
+        return ResponseEntity.ok(deviceService.listDevicesForUserEmail(email));
     }
 
     // ✅ POST /api/users : ADMIN uniquement

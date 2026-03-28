@@ -50,6 +50,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                             .approvalStatus(ApprovalStatus.APPROVED)
                             .enabled(true)
                             .locked(false)
+                            .failedLoginAttempts(0)
                             .build();
                     return userRepository.save(newUser);
                 });

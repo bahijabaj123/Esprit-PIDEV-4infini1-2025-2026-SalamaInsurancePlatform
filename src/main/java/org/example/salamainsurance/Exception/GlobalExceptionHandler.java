@@ -3,6 +3,7 @@ package org.example.salamainsurance.Exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -63,6 +64,16 @@ public class GlobalExceptionHandler {
         body.put("message", "Invalid email or password");
         body.put("timestamp", LocalDateTime.now());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
+
+    @ExceptionHandler(LockedException.class)
+    public ResponseEntity<Map<String, Object>> handleLockedAccount(LockedException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpStatus.LOCKED.value());
+        body.put("error", "Locked");
+        body.put("message", "Account is locked (compte verrouillé). Contact an administrator.");
+        body.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.LOCKED).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

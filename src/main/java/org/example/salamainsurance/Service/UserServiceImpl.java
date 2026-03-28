@@ -55,6 +55,7 @@ public class UserServiceImpl implements UserService {
                     .approvalStatus(ApprovalStatus.APPROVED)
                     .enabled(false)
                     .locked(false)
+                    .failedLoginAttempts(0)
                     .build();
         } else {
             user = User.builder()
@@ -66,6 +67,7 @@ public class UserServiceImpl implements UserService {
                     .approvalStatus(ApprovalStatus.PENDING)
                     .enabled(false)
                     .locked(false)
+                    .failedLoginAttempts(0)
                     .build();
         }
 
@@ -89,6 +91,7 @@ public class UserServiceImpl implements UserService {
                 .approvalStatus(ApprovalStatus.APPROVED)
                 .enabled(req.isEnabled())
                 .locked(req.isLocked())
+                .failedLoginAttempts(0)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -134,6 +137,9 @@ public class UserServiceImpl implements UserService {
             }
             if (req.getLocked() != null) {
                 user.setLocked(req.getLocked());
+                if (!req.getLocked()) {
+                    user.setFailedLoginAttempts(0);
+                }
             }
         }
 

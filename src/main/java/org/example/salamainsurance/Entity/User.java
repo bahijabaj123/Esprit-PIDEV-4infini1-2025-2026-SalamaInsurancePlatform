@@ -50,6 +50,11 @@ public class User {
     @Builder.Default
     private boolean locked = false;
 
+    @Column(nullable = false)
+    @ColumnDefault("0")
+    @Builder.Default
+    private int failedLoginAttempts = 0;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

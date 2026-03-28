@@ -8,6 +8,8 @@ import org.example.salamainsurance.DTO.UserResponse;
 import org.example.salamainsurance.Entity.User;
 import org.example.salamainsurance.Repository.UserRepository;
 import org.example.salamainsurance.Service.EmailService;
+import org.example.salamainsurance.Service.DeviceService;
+import org.example.salamainsurance.Service.LoginAttemptService;
 import org.example.salamainsurance.Service.UserService;
 import org.example.salamainsurance.Service.VerificationTokenService;
 import org.example.salamainsurance.security.JwtService;
@@ -16,10 +18,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
@@ -34,19 +38,25 @@ public class AuthController {
     private final EmailService emailService;
     private final VerificationTokenService verificationTokenService;
     private final UserRepository userRepository;
+    private final LoginAttemptService loginAttemptService;
+    private final DeviceService deviceService;
 
     public AuthController(UserService userService,
                           AuthenticationManager authenticationManager,
                           JwtService jwtService,
                           EmailService emailService,
                           VerificationTokenService verificationTokenService,
-                          UserRepository userRepository) {
+                          UserRepository userRepository,
+                          LoginAttemptService loginAttemptService,
+                          DeviceService deviceService) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
         this.emailService = emailService;
         this.verificationTokenService = verificationTokenService;
         this.userRepository = userRepository;
+        this.loginAttemptService = loginAttemptService;
+        this.deviceService = deviceService;
     }
 
     @PostMapping("/register")
@@ -72,15 +82,22 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
-        );
-
-        String email = authentication.getName();
-        UserResponse user = userService.getByEmail(email);
-        String token = jwtService.generateToken(email);
-        AuthResponse response = new AuthResponse(token, user);
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request,
+                                              HttpServletRequest httpRequest) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+            String email = authentication.getName();
+            loginAttemptService.resetAttemptsOnSuccessfulLogin(email);
+            deviceService.recordLoginForClassicAuth(email, httpRequest);
+            UserResponse user = userService.getByEmail(email);
+            String token = jwtService.generateToken(email);
+            AuthResponse response = new AuthResponse(token, user);
+            return ResponseEntity.ok(response);
+        } catch (BadCredentialsException e) {
+            loginAttemptService.recordFailedPasswordAttempt(request.getEmail());
+            throw e;
+        }
     }
 }
