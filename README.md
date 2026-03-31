@@ -15,7 +15,6 @@ Salama Insurance is an intelligent digital insurance platform that revolutionize
 ### 🎯 Key Features
 - **🤖 AI-Powered Claim Declaration**: Intelligent form assistant with image damage analysis
 - **📱 Real-Time Claim Tracking**: Package-like tracking with push notifications
-- **✍️ Integrated E-Signature**: Secure digital signing within the platform
 - **💬 24/7 AI Chatbot**: Immediate answers to insurance questions
 - **📍 Accident Geolocation**: Map integration for better incident context
 - **📊 Insurer Analytics**: Trend analysis and fraud detection tools
