@@ -1,35 +1,34 @@
 package org.example.salamainsurance.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.example.salamainsurance.DTO.AuthResponse;
-import org.example.salamainsurance.DTO.UserResponse;
 import org.example.salamainsurance.Entity.ApprovalStatus;
 import org.example.salamainsurance.Entity.RoleName;
 import org.example.salamainsurance.Entity.User;
 import org.example.salamainsurance.Repository.UserRepository;
-import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
-    private final ObjectMapper objectMapper;
+
+    @Value("${oauth2.success-redirect-url:http://localhost:4200/oauth2/success}")
+    private String successRedirectUrl;
 
     public OAuth2AuthenticationSuccessHandler(UserRepository userRepository,
-                                             JwtService jwtService,
-                                             ObjectMapper objectMapper) {
+                                             JwtService jwtService) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -57,23 +56,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         String token = jwtService.generateToken(user.getEmail());
 
-        UserResponse userResponse = new UserResponse();
-        userResponse.setId(user.getId());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setFullName(user.getFullName());
-        userResponse.setRole(user.getRole());
-        userResponse.setRequestedRole(user.getRequestedRole());
-        userResponse.setApprovalStatus(user.getApprovalStatus());
-        userResponse.setEnabled(user.isEnabled());
-        userResponse.setLocked(user.isLocked());
-        userResponse.setCreatedAt(user.getCreatedAt());
-        userResponse.setUpdatedAt(user.getUpdatedAt());
+        clearAuthenticationAttributes(request);
 
-        AuthResponse authResponse = new AuthResponse(token, userResponse);
-        objectMapper.findAndRegisterModules();
-        response.setStatus(HttpServletResponse.SC_OK);
-        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        response.setCharacterEncoding("UTF-8");
-        response.getWriter().write(objectMapper.writeValueAsString(authResponse));
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        String redirectUrl = successRedirectUrl + (successRedirectUrl.contains("?") ? "&" : "?") + "token=" + encodedToken;
+        response.sendRedirect(redirectUrl);
     }
 }

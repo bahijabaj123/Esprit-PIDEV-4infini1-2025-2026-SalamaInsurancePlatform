@@ -15,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Configuration
@@ -52,27 +53,27 @@ public class SecurityConfig {
         return config;
       }))
 
-      // Gestion des sessions
+      // OAuth2 code flow still needs a session for the authorization round-trip.
+      // JWT for /api/** is carried per request via Authorization header (JwtAuthFilter).
       .sessionManagement(session ->
         session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
-      // Gestion des exceptions
-      /*.exceptionHandling(ex -> ex
-        .authenticationEntryPoint(jsonAuthenticationEntryPoint)
-        .accessDeniedHandler(jsonAccessDeniedHandler))
-*/
+      // /api/** must return JSON 401/403, never redirect to Google OAuth2
+      .exceptionHandling(ex -> ex
+        .defaultAuthenticationEntryPointFor(
+            jsonAuthenticationEntryPoint,
+            SecurityConfig::isUnderApiPath)
+        .defaultAccessDeniedHandlerFor(
+            jsonAccessDeniedHandler,
+            SecurityConfig::isUnderApiPath))
       // Configuration des autorisations
       .authorizeHttpRequests(auth -> auth
         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+        // Public auth + OAuth2 first (order matters: first match wins)
+        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+        .requestMatchers("/api/auth/**").permitAll()
         .requestMatchers("/api/complaints/test-ai").permitAll()
         .requestMatchers("/api/complaints/**").permitAll()
-        // Endpoints publics (authentification)
-        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
-        .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
-        .requestMatchers(HttpMethod.POST, "/api/auth/forgot-password").permitAll()
-        .requestMatchers(HttpMethod.POST, "/api/auth/reset-password").permitAll()
-        .requestMatchers(HttpMethod.GET, "/api/auth/verify").permitAll()
-        .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
         .requestMatchers("/api/indemnities/**").permitAll()
         .requestMatchers("/api/repair-shops-linda/**").permitAll()
         .requestMatchers("/api/accidents/**").permitAll()
@@ -138,7 +139,6 @@ public class SecurityConfig {
 
         .requestMatchers("/api/rapports-expertise/**").permitAll()
 
-        .requestMatchers("/api/**").permitAll()
         .requestMatchers("/api/main-oeuvre/**").permitAll()
         .requestMatchers("/api/rapports-expertise/**").permitAll()
         .requestMatchers("/api/experts/**").permitAll()
@@ -148,6 +148,9 @@ public class SecurityConfig {
 
         // Swagger UI
         .requestMatchers("/swagger-ui/**", "/api-docs/**", "/swagger-ui.html").permitAll()
+
+        // All other /api/** routes require authentication (JWT via JwtAuthFilter)
+        .requestMatchers("/api/**").authenticated()
 
         // Tout le reste nécessite une authentification
         .anyRequest().authenticated())
@@ -171,5 +174,21 @@ public class SecurityConfig {
   @Bean
   public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
     return config.getAuthenticationManager();
+  }
+
+  /**
+   * Same scope as legacy {@code new AntPathRequestMatcher("/api/**")}: paths under {@code /api/}
+   * plus the exact context-relative path {@code /api}.
+   */
+  private static boolean isUnderApiPath(HttpServletRequest request) {
+    String path = request.getRequestURI();
+    String contextPath = request.getContextPath();
+    if (contextPath != null && !contextPath.isEmpty() && path.startsWith(contextPath)) {
+      path = path.substring(contextPath.length());
+    }
+    if (!path.startsWith("/")) {
+      path = "/" + path;
+    }
+    return "/api".equals(path) || path.startsWith("/api/");
   }
 }

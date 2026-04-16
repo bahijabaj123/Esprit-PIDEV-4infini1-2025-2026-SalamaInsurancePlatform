@@ -8,6 +8,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -42,9 +43,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             String email = jwtService.getEmailFromToken(token);
-            if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            if (email != null) {
                 UserDetails userDetails = userDetailsService.loadUserByUsername(email);
                 if (jwtService.validateToken(token, email)) {
+                    // If a valid Bearer token is present, it must define the principal for THIS request.
+                    // This intentionally replaces any stale session-based Authentication (e.g., previously logged-in admin).
+                    Authentication existing = SecurityContextHolder.getContext().getAuthentication();
+                    if (existing != null && existing.isAuthenticated() && email.equals(existing.getName())) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                             userDetails,
                             null,

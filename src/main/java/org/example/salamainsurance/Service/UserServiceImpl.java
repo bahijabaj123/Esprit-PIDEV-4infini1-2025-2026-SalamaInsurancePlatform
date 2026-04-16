@@ -62,7 +62,7 @@ public class UserServiceImpl implements UserService {
                     .email(req.getEmail())
                     .password(passwordEncoder.encode(req.getPassword()))
                     .fullName(req.getFullName())
-                    .role(RoleName.CLIENT)
+                    .role(chosen)
                     .requestedRole(chosen)
                     .approvalStatus(ApprovalStatus.PENDING)
                     .enabled(false)
@@ -185,7 +185,6 @@ public class UserServiceImpl implements UserService {
         if (user.getApprovalStatus() != ApprovalStatus.PENDING || user.getRequestedRole() == null) {
             throw new BadRequestException("No pending role request for this user");
         }
-        user.setRequestedRole(null);
         user.setApprovalStatus(ApprovalStatus.REJECTED);
         return mapToResponse(userRepository.save(user));
     }
