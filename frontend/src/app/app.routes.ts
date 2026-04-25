@@ -40,8 +40,9 @@ import { assureurAuthGuard } from './features/assureur/guards/assureur-auth.guar
 import { ClientDashboardComponent } from './features/client/client-dashboard/client-dashboard.component';
 import { ClientSinistreDetailComponent } from './features/client/client-sinistre-detail/client-sinistre-detail.component';
 import { ClientAssistantComponent } from './features/client/client-assistant/client-assistant.component';
-import { ClientDocumentsComponent } from './features/client/client-documents/client-documents.component';
 import { ClientNotificationsComponent } from './features/client/client-notifications/client-notifications.component';
+import { ClientDocumentsComponent } from './features/client/client-documents/client-documents.component';
+import { ClientDashboardHomeComponent } from './features/client/client-dashboard/client-dashboard-home.component';
 
 // ============================================================
 // COMPOSANT DE DÉCONNEXION SIMPLE (temporaire)
@@ -112,52 +113,22 @@ component: MainLayoutComponent,
   // ROUTES CLIENT (TON DASHBOARD COMPLET)
   // ============================================================
   {
-    path: 'client',
-    component: ClientDashboardComponent,
-    canActivate: [clientAuthGuard]
-  },
-  // Routes enfants de client (pour les pages internes)
-  {
-    path: 'client/sinistres/:id',
-    component: ClientSinistreDetailComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/documents',
-    component: ClientDocumentsComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/notifications',
-    component: ClientNotificationsComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/assistant',
-    component: ClientAssistantComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/profile',
-    component: ClientProfileComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/create-contract',
-    component: ClientSimplePageComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/history',
-    component: ClientSimplePageComponent,
-    canActivate: [clientAuthGuard]
-  },
-  {
-    path: 'client/logout',
-    component: LogoutComponent,
-    canActivate: [clientAuthGuard]
-  },
-
+  path: 'client',
+  component: ClientDashboardComponent,  // ← Layout avec sidebar
+  canActivate: [clientAuthGuard],
+  children: [
+    { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+    { path: 'dashboard', component: ClientDashboardHomeComponent }, 
+    { path: 'sinistres/:id', component: ClientSinistreDetailComponent },
+    { path: 'documents', component: ClientDocumentsComponent },
+    { path: 'notifications', component: ClientNotificationsComponent },
+    { path: 'assistant', component: ClientAssistantComponent },
+    { path: 'profile', component: ClientProfileComponent },
+    { path: 'create-contract', component: ClientSimplePageComponent },
+    { path: 'history', component: ClientSimplePageComponent },
+    { path: 'logout', component: LogoutComponent }
+  ]
+},
 
   // ============================================================
   // ROUTES EXPERT

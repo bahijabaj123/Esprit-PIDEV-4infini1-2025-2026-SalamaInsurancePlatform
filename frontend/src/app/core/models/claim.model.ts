@@ -217,6 +217,14 @@ export const STATUS_LABELS: Record<ClaimStatus, string> = {
   [ClaimStatus.REJECTED]:           'Rejeté',
 };
 
+export const STATUS_BADGE_CSS: Record<ClaimStatus, string> = {
+  [ClaimStatus.OPENED]: 'badge-opened',
+  [ClaimStatus.ASSIGNED_TO_EXPERT]: 'badge-assigned',
+  [ClaimStatus.UNDER_EXPERTISE]: 'badge-expertise',
+  [ClaimStatus.CLOSED]: 'badge-closed',
+  [ClaimStatus.REJECTED]: 'badge-rejected',
+};
+
 export const STATUS_CSS: Record<ClaimStatus, string> = {
   [ClaimStatus.OPENED]:             'status-opened',
   [ClaimStatus.ASSIGNED_TO_EXPERT]: 'status-assigned',

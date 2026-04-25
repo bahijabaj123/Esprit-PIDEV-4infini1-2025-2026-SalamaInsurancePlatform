@@ -5,17 +5,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
 import { ClaimService } from '../../../core/services/claim.service';
-import { Claim } from '../../../core/models/claim.model';
 
 interface DocumentItem {
   id: number;
   name: string;
-  type: 'EXPERT_REPORT' | 'ASSURER_REPORT' | 'CONSTAT' | 'PHOTO';
+  type: 'EXPERT_REPORT' | 'ASSURER_REPORT' | 'CONSTAT';
   date: Date;
   size: string;
   claimReference: string;
-  url: string;
+  claimId: number;
 }
 
 @Component({
@@ -163,21 +163,66 @@ export class ClientDocumentsComponent implements OnInit {
   expertReports: DocumentItem[] = [];
   assurerReports: DocumentItem[] = [];
 
-  constructor(private claimService: ClaimService) {}
+  constructor(
+    private authStorage: AuthStorageService,
+    private claimService: ClaimService
+  ) {}
 
   ngOnInit(): void {
     this.loadDocuments();
   }
 
   loadDocuments(): void {
-    // Simulation de données (à remplacer par API réelle)
-    this.allDocuments = [
-      { id: 1, name: 'Rapport_expertise_CLM-20260410-9215.pdf', type: 'EXPERT_REPORT', date: new Date('2026-04-15'), size: '2.3 MB', claimReference: 'CLM-20260410-9215', url: '#' },
-      { id: 2, name: 'Constat_amiable_CLM-20260410-9215.pdf', type: 'CONSTAT', date: new Date('2026-04-10'), size: '1.1 MB', claimReference: 'CLM-20260410-9215', url: '#' },
-      { id: 3, name: 'Indemnisation_CLM-20260410-9795.pdf', type: 'ASSURER_REPORT', date: new Date('2026-04-18'), size: '856 KB', claimReference: 'CLM-20260410-9795', url: '#' }
-    ];
-    this.expertReports = this.allDocuments.filter(d => d.type === 'EXPERT_REPORT');
-    this.assurerReports = this.allDocuments.filter(d => d.type === 'ASSURER_REPORT');
+    const currentUser = this.authStorage.getUser();
+    if (!currentUser) return;
+
+    this.claimService.getAllClaims().subscribe(claims => {
+      const userClaims = claims.filter(c => c.client?.id === currentUser.id);
+      
+      this.allDocuments = [];
+      
+      userClaims.forEach(claim => {
+        // Constat amiable (toujours présent)
+        this.allDocuments.push({
+          id: this.allDocuments.length + 1,
+          name: `Constat_amiable_${claim.reference}.pdf`,
+          type: 'CONSTAT',
+          date: new Date(claim.openingDate),
+          size: '1.2 MB',
+          claimReference: claim.reference,
+          claimId: claim.id
+        });
+        
+        // Rapport d'expertise (si expert assigné)
+        if (claim.expert && claim.expert.firstName) {
+          this.allDocuments.push({
+            id: this.allDocuments.length + 1,
+            name: `Rapport_expertise_${claim.reference}.pdf`,
+            type: 'EXPERT_REPORT',
+            date: new Date(claim.assignedDate || claim.openingDate),
+            size: '2.5 MB',
+            claimReference: claim.reference,
+            claimId: claim.id
+          });
+        }
+        
+        // Rapport d'indemnisation (si sinistre clôturé)
+        if (claim.status === 'CLOSED') {
+          this.allDocuments.push({
+            id: this.allDocuments.length + 1,
+            name: `Indemnisation_${claim.reference}.pdf`,
+            type: 'ASSURER_REPORT',
+            date: new Date(claim.closingDate || claim.lastModifiedDate),
+            size: '856 KB',
+            claimReference: claim.reference,
+            claimId: claim.id
+          });
+        }
+      });
+      
+      this.expertReports = this.allDocuments.filter(d => d.type === 'EXPERT_REPORT');
+      this.assurerReports = this.allDocuments.filter(d => d.type === 'ASSURER_REPORT');
+    });
   }
 
   getFileIcon(type: string): string {
@@ -190,12 +235,12 @@ export class ClientDocumentsComponent implements OnInit {
   }
 
   downloadDocument(doc: DocumentItem): void {
-    console.log('Téléchargement:', doc.name);
-    alert(`Téléchargement de ${doc.name} (simulation)`);
+    console.log('📥 Téléchargement:', doc.name);
+    alert(`📥 Téléchargement de "${doc.name}"\n\nLe téléchargement commencera sous peu.`);
   }
 
   viewDocument(doc: DocumentItem): void {
-    console.log('Aperçu:', doc.name);
-    window.open(doc.url, '_blank');
+    console.log('👁️ Aperçu:', doc.name);
+    alert(`👁️ Aperçu de "${doc.name}"\n\nAffichage du document...`);
   }
 }

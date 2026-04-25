@@ -5,6 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { Router } from '@angular/router';
+import { AuthStorageService } from '../../../core/auth/auth-storage.service';
+import { ClaimService } from '../../../core/services/claim.service';
+import { STATUS_LABELS } from '../../../core/models/claim.model';
 
 interface Notification {
   id: number;
@@ -97,18 +100,69 @@ export class ClientNotificationsComponent implements OnInit {
   unreadNotifications: Notification[] = [];
   unreadCount = 0;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authStorage: AuthStorageService,
+    private claimService: ClaimService
+  ) {}
 
-  ngOnInit(): void { this.loadNotifications(); }
+  ngOnInit(): void { 
+    this.loadNotifications();
+  }
 
   loadNotifications(): void {
-    this.allNotifications = [
-      { id: 1, title: 'Expert assigné', message: 'Karim Trabelsi a été assigné à votre sinistre CLM-20260410-9215', date: new Date(Date.now() - 2 * 60 * 60 * 1000), read: false, type: 'expert_assigned', claimId: 1 },
-      { id: 2, title: 'Document requis', message: 'Merci d\'ajouter le constat amiable signé', date: new Date(Date.now() - 5 * 60 * 60 * 1000), read: false, type: 'document_required', claimId: 1 },
-      { id: 3, title: 'Sinistre ouvert', message: 'Votre déclaration a été enregistrée avec succès', date: new Date(Date.now() - 24 * 60 * 60 * 1000), read: true, type: 'claim_update', claimId: 2 },
-      { id: 4, title: 'Paiement effectué', message: 'L\'indemnisation de votre sinistre a été versée', date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), read: true, type: 'payment', claimId: 3 }
-    ];
-    this.updateUnreadCount();
+    const currentUser = this.authStorage.getUser();
+    if (!currentUser) return;
+
+    this.claimService.getAllClaims().subscribe(claims => {
+      const userClaims = claims.filter(c => c.client?.id === currentUser.id);
+      
+      this.allNotifications = [];
+      let notifId = 1;
+      
+      userClaims.forEach(claim => {
+        // Notification: Sinistre créé
+        this.allNotifications.push({
+          id: notifId++,
+          title: 'Sinistre enregistré',
+          message: `Votre sinistre ${claim.reference} a été enregistré avec succès.`,
+          date: new Date(claim.openingDate),
+          read: false,
+          type: 'claim_update',
+          claimId: claim.id
+        });
+        
+        // Notification: Expert assigné
+        if (claim.expert && claim.expert.firstName) {
+          this.allNotifications.push({
+            id: notifId++,
+            title: 'Expert assigné',
+            message: `L'expert ${claim.expert.firstName} ${claim.expert.lastName} a été assigné à votre sinistre ${claim.reference}.`,
+            date: new Date(claim.assignedDate || claim.openingDate),
+            read: false,
+            type: 'expert_assigned',
+            claimId: claim.id
+          });
+        }
+        
+        // Notification: Sinistre clôturé
+        if (claim.status === 'CLOSED') {
+          this.allNotifications.push({
+            id: notifId++,
+            title: 'Sinistre clôturé',
+            message: `Votre sinistre ${claim.reference} a été clôturé. L'indemnisation a été versée.`,
+            date: new Date(claim.closingDate || claim.lastModifiedDate),
+            read: false,
+            type: 'payment',
+            claimId: claim.id
+          });
+        }
+      });
+      
+      // Trier par date décroissante (plus récent en premier)
+      this.allNotifications.sort((a, b) => b.date.getTime() - a.date.getTime());
+      this.updateUnreadCount();
+    });
   }
 
   updateUnreadCount(): void {
@@ -120,7 +174,9 @@ export class ClientNotificationsComponent implements OnInit {
     if (!notification.read) {
       notification.read = true;
       this.updateUnreadCount();
-      if (notification.claimId) this.router.navigate(['/client/sinistres', notification.claimId]);
+      if (notification.claimId) {
+        this.router.navigate(['/client/sinistres', notification.claimId]);
+      }
     }
   }
 
