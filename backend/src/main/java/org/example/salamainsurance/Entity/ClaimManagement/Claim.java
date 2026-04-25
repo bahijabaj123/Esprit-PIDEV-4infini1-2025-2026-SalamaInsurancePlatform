@@ -6,6 +6,8 @@ import org.example.salamainsurance.Entity.Expert.ExpertHassen;
 import org.example.salamainsurance.Entity.Expert.ExpertReportHassen;
 import org.example.salamainsurance.Entity.Report.Accident;
 import jakarta.persistence.*;
+import org.example.salamainsurance.Entity.User;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -296,7 +298,35 @@ public class Claim {
     return 0;
   }
 
-  public Claim getClient() {
-    return null;
+  @ManyToOne
+  @JoinColumn(name = "client_id")
+  private User client;
+
+  public User getClient() {
+    return client;
   }
+
+  public void setClient(User client) {
+    this.client = client;
+  }
+
+  @OneToMany(mappedBy = "claim", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+  private List<ClaimHistory> history = new ArrayList<>();
+
+  // Getter et Setter
+  public List<ClaimHistory> getHistory() {
+    return history;
+  }
+
+  public void setHistory(List<ClaimHistory> history) {
+    this.history = history;
+  }
+
+  // Méthode utilitaire pour ajouter une action
+  public void addHistory(String action, String description, String performedBy) {
+    ClaimHistory historyEntry = new ClaimHistory(this, action, description, performedBy);
+    this.history.add(historyEntry);
+  }
+
+
 }

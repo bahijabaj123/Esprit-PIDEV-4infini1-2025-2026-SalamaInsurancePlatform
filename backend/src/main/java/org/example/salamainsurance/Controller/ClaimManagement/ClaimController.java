@@ -71,11 +71,47 @@ public class ClaimController {
   public ResponseEntity<?> getClaimById(@PathVariable Long id) {
     try {
       Claim claim = claimService.getClaimById(id);
-      return ResponseEntity.ok(claim);
+
+      // ⭐ Créer un DTO qui inclut l'expert
+      Map<String, Object> response = new HashMap<>();
+      response.put("id", claim.getId());
+      response.put("reference", claim.getReference());
+      response.put("status", claim.getStatus());
+      response.put("region", claim.getRegion());
+      response.put("openingDate", claim.getOpeningDate());
+      response.put("assignedDate", claim.getAssignedDate());
+      response.put("closingDate", claim.getClosingDate());
+      response.put("lastModifiedDate", claim.getLastModifiedDate());
+      response.put("notes", claim.getNotes());
+      response.put("urgencyScore", claim.getUrgencyScore());
+
+      // ⭐ Inclure l'expert s'il existe
+      if (claim.getExpert() != null) {
+        Map<String, Object> expertMap = new HashMap<>();
+        expertMap.put("idExpert", claim.getExpert().getIdExpert());
+        expertMap.put("firstName", claim.getExpert().getFirstName());
+        expertMap.put("lastName", claim.getExpert().getLastName());
+        expertMap.put("email", claim.getExpert().getEmail());
+        expertMap.put("phone", claim.getExpert().getPhone());
+        expertMap.put("specialty", claim.getExpert().getSpecialty());
+        expertMap.put("interventionZone", claim.getExpert().getInterventionZone());
+        expertMap.put("performanceScore", claim.getExpert().getPerformanceScore());
+        expertMap.put("activeClaims", claim.getExpert().getActiveClaims());
+        expertMap.put("yearsOfExperience", claim.getExpert().getYearsOfExperience());
+        response.put("expert", expertMap);
+      }
+
+      // Inclure l'accident si besoin
+      if (claim.getAccident() != null) {
+        response.put("accident", claim.getAccident());
+      }
+
+      return ResponseEntity.ok(response);
     } catch (Exception e) {
       return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
     }
   }
+
 
   @GetMapping("/reference/{reference}")
   public ResponseEntity<?> getClaimByReference(@PathVariable String reference) {

@@ -2,14 +2,16 @@ package org.example.salamainsurance.Service.ClaimManagement;
 
 import lombok.extern.slf4j.Slf4j;
 import org.example.salamainsurance.Entity.ClaimManagement.Claim;
+import org.example.salamainsurance.Entity.ClaimManagement.ClaimHistory;
 import org.example.salamainsurance.Entity.ClaimManagement.ClaimStatus;
 import org.example.salamainsurance.Entity.Expert.ExpertHassen;
 import org.example.salamainsurance.Entity.Expert.ExpertStatus;
 import org.example.salamainsurance.Entity.ClaimManagement.Insurer;
 import org.example.salamainsurance.Entity.Report.Accident;
 import org.example.salamainsurance.Exception.ResourceNotFoundException;
+import org.example.salamainsurance.Repository.ClaimManagement.ClaimHistoryRepository;
 import org.example.salamainsurance.Repository.ClaimManagement.ClaimRepository;
-import org.example.salamainsurance.Repository.Expert.ExpertHassenRepository;  // ← CORRIGÉ
+import org.example.salamainsurance.Repository.Expert.ExpertHassenRepository;
 import org.example.salamainsurance.Repository.ClaimManagement.InsurerRepository;
 import org.example.salamainsurance.Repository.Report.AccidentRepository;
 import org.example.salamainsurance.Service.Notification.EnhancedEmailService;
@@ -32,6 +34,9 @@ public class ClaimServiceImpl implements ClaimService {
   private ClaimRepository claimRepository;
 
   @Autowired
+  private ClaimHistoryRepository claimHistoryRepository;
+
+  @Autowired
   private AccidentRepository accidentRepository;
 
   @Autowired
@@ -48,7 +53,6 @@ public class ClaimServiceImpl implements ClaimService {
 
   @Autowired
   private EnhancedEmailService enhancedEmailService;
-
 
   @Autowired
   private IntelligentExpertAssignmentService intelligentAssignmentService;
@@ -88,6 +92,10 @@ public class ClaimServiceImpl implements ClaimService {
 
     Claim savedClaim = claimRepository.save(claim);
 
+    // ⭐ Ajouter l'historique de création
+    savedClaim.addHistory("CLAIM_CREATED", "Sinistre créé à partir de l'accident #" + accidentId, "SYSTEM");
+    claimHistoryRepository.saveAll(savedClaim.getHistory());
+
     accident.setClaim(savedClaim);
     accidentRepository.save(accident);
 
@@ -98,8 +106,14 @@ public class ClaimServiceImpl implements ClaimService {
 
   @Override
   public Claim getClaimById(Long id) {
-    return claimRepository.findById(id)
+    Claim claim = claimRepository.findById(id)
       .orElseThrow(() -> new ResourceNotFoundException("Claim not found with id: " + id));
+
+    // ⭐ Charger l'historique
+    List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(id);
+    claim.setHistory(history);
+
+    return claim;
   }
 
   @Override
@@ -108,12 +122,25 @@ public class ClaimServiceImpl implements ClaimService {
     if (claim == null) {
       throw new ResourceNotFoundException("Claim not found with reference: " + reference);
     }
+
+    // ⭐ Charger l'historique
+    List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+    claim.setHistory(history);
+
     return claim;
   }
 
   @Override
   public List<Claim> getAllClaims() {
-    return claimRepository.findAll();
+    List<Claim> claims = claimRepository.findAll();
+
+    // ⭐ Charger l'historique pour chaque claim
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+
+    return claims;
   }
 
   @Override
@@ -125,12 +152,21 @@ public class ClaimServiceImpl implements ClaimService {
   public Claim updateClaim(Long id, Claim claimDetails) {
     Claim claim = getClaimById(id);
 
+    String oldStatus = claim.getStatus().toString();
+
     if (claimDetails.getStatus() != null) {
       claim.setStatus(claimDetails.getStatus());
+      // ⭐ Ajouter l'historique de changement de statut
+      claim.addHistory("STATUS_UPDATED",
+        "Statut changé de " + oldStatus + " à " + claimDetails.getStatus(),
+        "INSUREUR");
+      claimHistoryRepository.saveAll(claim.getHistory());
     }
 
     if (claimDetails.getNotes() != null) {
       claim.setNotes(claimDetails.getNotes());
+      claim.addHistory("NOTES_UPDATED", "Notes mises à jour", "INSUREUR");
+      claimHistoryRepository.saveAll(claim.getHistory());
     }
 
     if (claimDetails.getExpert() != null) {
@@ -141,14 +177,17 @@ public class ClaimServiceImpl implements ClaimService {
       claim.setRegion(claim.getAccident().getLocation());
     }
 
-    claim.addAction("Claim updated by insurer");
     return claimRepository.save(claim);
   }
 
   @Override
   public void deleteClaim(Long id) {
     Claim claim = getClaimById(id);
-    claim.addAction("Claim deleted");
+
+    // ⭐ Ajouter l'historique avant suppression
+    claim.addHistory("CLAIM_DELETED", "Sinistre supprimé", "SYSTEM");
+    claimHistoryRepository.saveAll(claim.getHistory());
+
     claimRepository.delete(claim);
   }
 
@@ -166,7 +205,7 @@ public class ClaimServiceImpl implements ClaimService {
     ExpertHassen expert = expertRepository.findById(expertId.intValue())
       .orElseThrow(() -> new ResourceNotFoundException("Expert not found with id: " + expertId));
 
-    // 1. Vérifier que l'expert est assignable (AVAILABLE, BUSY ou ACTIVE)
+    // 1. Vérifier que l'expert est assignable
     Set<ExpertStatus> assignableStatuses = Set.of(
       ExpertStatus.AVAILABLE,
       ExpertStatus.BUSY,
@@ -176,17 +215,18 @@ public class ClaimServiceImpl implements ClaimService {
       throw new IllegalStateException("Expert is not available. Status: " + expert.getStatus());
     }
 
-    // 2. Vérifier la charge de travail (gérer les null)
+    // 2. Vérifier la charge de travail
     int currentWorkload = expert.getCurrentWorkload() != null ? expert.getCurrentWorkload() : 0;
     int maxWorkload = expert.getMaxWorkload() != null ? expert.getMaxWorkload() : 10;
     if (currentWorkload >= maxWorkload) {
       throw new IllegalStateException("Expert has reached maximum workload");
     }
 
-
     // 3. Désassigner l'ancien expert si nécessaire
+    String previousExpertName = null;
     if (claim.getExpert() != null) {
       ExpertHassen previousExpert = claim.getExpert();
+      previousExpertName = previousExpert.getFirstName() + " " + previousExpert.getLastName();
       int prevWorkload = previousExpert.getCurrentWorkload() != null ? previousExpert.getCurrentWorkload() : 0;
       previousExpert.setCurrentWorkload(Math.max(0, prevWorkload - 1));
       if (previousExpert.getCurrentWorkload() < previousExpert.getMaxWorkload()) {
@@ -199,7 +239,19 @@ public class ClaimServiceImpl implements ClaimService {
     claim.setExpert(expert);
     claim.setStatus(ClaimStatus.ASSIGNED_TO_EXPERT);
     claim.setAssignedDate(LocalDateTime.now());
-    claim.addAction("Assigned to expert: " + expert.getFirstName() + " " + expert.getLastName());
+
+    // ⭐ Ajouter l'historique d'assignation
+    String expertName = expert.getFirstName() + " " + expert.getLastName();
+    if (previousExpertName != null) {
+      claim.addHistory("EXPERT_REASSIGNED",
+        "Expert changé de " + previousExpertName + " à " + expertName,
+        "ASSIGNMENT_SYSTEM");
+    } else {
+      claim.addHistory("EXPERT_ASSIGNED",
+        "Expert assigné: " + expertName,
+        "ASSIGNMENT_SYSTEM");
+    }
+    claimHistoryRepository.saveAll(claim.getHistory());
 
     // 5. Mettre à jour la charge de l'expert
     expert.setCurrentWorkload(currentWorkload + 1);
@@ -209,6 +261,7 @@ public class ClaimServiceImpl implements ClaimService {
       expert.setStatus(ExpertStatus.BUSY);
     }
     expertRepository.save(expert);
+
     // 6. Sauvegarder le sinistre
     Claim savedClaim = claimRepository.save(claim);
 
@@ -223,7 +276,6 @@ public class ClaimServiceImpl implements ClaimService {
 
     return savedClaim;
   }
-
 
   @Override
   public Claim autoAssignExpert(Long claimId) {
@@ -240,7 +292,8 @@ public class ClaimServiceImpl implements ClaimService {
 
       if (result.getAssignedExpertId() == null) {
         claim.setNotes("No expert available for assignment. " + result.getAssignmentReason());
-        claim.addAction("Auto-assignment failed: No expert available");
+        claim.addHistory("AUTO_ASSIGN_FAILED", "Auto-assignation échouée: Aucun expert disponible", "SYSTEM");
+        claimHistoryRepository.saveAll(claim.getHistory());
         return claimRepository.save(claim);
       }
 
@@ -251,12 +304,18 @@ public class ClaimServiceImpl implements ClaimService {
       claim.setNotes("Expert assigned automatically. Match score: " + result.getMatchScore() +
         ". Reason: " + result.getAssignmentReason());
 
+      claim.addHistory("AUTO_ASSIGN_SUCCESS",
+        "Expert automatiquement assigné avec un score de " + result.getMatchScore() + "%",
+        "SYSTEM");
+      claimHistoryRepository.saveAll(claim.getHistory());
+
       return claim;
 
     } catch (Exception e) {
       log.error("Erreur lors de l'auto-assignation pour le claim {}: {}", claimId, e.getMessage());
       claim.setNotes("Auto-assignment failed: " + e.getMessage());
-      claim.addAction("Auto-assignment error");
+      claim.addHistory("AUTO_ASSIGN_ERROR", "Erreur lors de l'auto-assignation: " + e.getMessage(), "SYSTEM");
+      claimHistoryRepository.saveAll(claim.getHistory());
       return claimRepository.save(claim);
     }
   }
@@ -270,6 +329,7 @@ public class ClaimServiceImpl implements ClaimService {
     }
 
     ExpertHassen expert = claim.getExpert();
+    String expertName = expert.getFirstName() + " " + expert.getLastName();
 
     // Gérer les valeurs null
     int currentWorkload = expert.getCurrentWorkload() != null ? expert.getCurrentWorkload() : 0;
@@ -285,25 +345,35 @@ public class ClaimServiceImpl implements ClaimService {
     claim.setExpert(null);
     claim.setStatus(ClaimStatus.OPENED);
     claim.setAssignedDate(null);
-    claim.addAction("Expert unassigned: " + expert.getFirstName() + " " + expert.getLastName());
+
+    // ⭐ Ajouter l'historique de désassignation
+    claim.addHistory("EXPERT_UNASSIGNED", "Expert désassigné: " + expertName, "SYSTEM");
+    claimHistoryRepository.saveAll(claim.getHistory());
 
     return claimRepository.save(claim);
   }
-
 
   // ========== STATUS MANAGEMENT ==========
 
   @Override
   public Claim updateClaimStatus(Long claimId, ClaimStatus newStatus) {
     Claim claim = getClaimById(claimId);
-    validateStatusTransition(claim.getStatus(), newStatus);
+    ClaimStatus oldStatus = claim.getStatus();
+    validateStatusTransition(oldStatus, newStatus);
 
     claim.setStatus(newStatus);
-    claim.addAction("Status changed to: " + newStatus);
+
+    // ⭐ Ajouter l'historique de changement de statut
+    claim.addHistory("STATUS_UPDATED",
+      "Statut changé de " + oldStatus + " à " + newStatus,
+      "SYSTEM");
+    claimHistoryRepository.saveAll(claim.getHistory());
 
     if (newStatus == ClaimStatus.CLOSED) {
       claim.setClosingDate(LocalDateTime.now());
       updateExpertPerformance(claim);
+      claim.addHistory("CLAIM_CLOSED", "Sinistre clôturé", "SYSTEM");
+      claimHistoryRepository.saveAll(claim.getHistory());
     }
 
     return claimRepository.save(claim);
@@ -341,7 +411,10 @@ public class ClaimServiceImpl implements ClaimService {
     }
 
     claim.setStatus(ClaimStatus.CANCELLED);
-    claim.addAction("Claim cancelled");
+
+    // ⭐ Ajouter l'historique d'annulation
+    claim.addHistory("CLAIM_CANCELLED", "Sinistre annulé", "SYSTEM");
+    claimHistoryRepository.saveAll(claim.getHistory());
 
     return claimRepository.save(claim);
   }
@@ -351,27 +424,55 @@ public class ClaimServiceImpl implements ClaimService {
   @Override
   public List<Claim> searchClaims(String reference, ClaimStatus status, String region,
                                   Long expertId, LocalDateTime startDate, LocalDateTime endDate) {
-    return claimRepository.searchClaims(reference, status, region, expertId != null ? expertId.intValue() : null , startDate, endDate);
+    List<Claim> claims = claimRepository.searchClaims(reference, status, region, expertId != null ? expertId.intValue() : null, startDate, endDate);
+
+    // ⭐ Charger l'historique pour chaque claim
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+
+    return claims;
   }
 
   @Override
   public List<Claim> findByStatus(ClaimStatus status) {
-    return claimRepository.findByStatus(status);
+    List<Claim> claims = claimRepository.findByStatus(status);
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+    return claims;
   }
 
   @Override
   public List<Claim> findByExpertId(Integer expertId) {
-    return claimRepository.findByExpertId(expertId);
+    List<Claim> claims = claimRepository.findByExpertId(expertId);
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+    return claims;
   }
 
   @Override
   public List<Claim> findByRegion(String region) {
-    return claimRepository.findByRegionContaining(region);
+    List<Claim> claims = claimRepository.findByRegionContaining(region);
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+    return claims;
   }
 
   @Override
   public List<Claim> findByDateRange(LocalDateTime start, LocalDateTime end) {
-    return claimRepository.findByOpeningDateBetween(start, end);
+    List<Claim> claims = claimRepository.findByOpeningDateBetween(start, end);
+    for (Claim claim : claims) {
+      List<ClaimHistory> history = claimHistoryRepository.findByClaimIdOrderByTimestampDesc(claim.getId());
+      claim.setHistory(history);
+    }
+    return claims;
   }
 
   // ========== STATISTICS & REPORTING ==========
@@ -430,7 +531,8 @@ public class ClaimServiceImpl implements ClaimService {
 
     if (accident != null) {
       claim.setRegion(accident.getLocation());
-      claim.addAction("Synced with accident update");
+      claim.addHistory("SYNC_WITH_ACCIDENT", "Synchronisé avec l'accident", "SYSTEM");
+      claimHistoryRepository.saveAll(claim.getHistory());
     }
 
     return claimRepository.save(claim);
